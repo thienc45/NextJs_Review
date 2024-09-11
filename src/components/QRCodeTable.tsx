@@ -43,7 +43,7 @@ export const QRCodeTable = ({
         width,
         margin: 4
       },
-      function (error) {
+      function (error: any) {
         if (error) console.error(error)
         canvasContext.drawImage(qrCanvas, 0, 0, width, width)
       }

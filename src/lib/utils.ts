@@ -2,13 +2,16 @@
 import authApiRequest from "@/apiRequests/auth";
 import guestApiRequest from "@/apiRequests/guest";
 import envConfig from "@/config";
-import { DishStatus, Role, TableStatus } from "@/constants/type";
+import { DishStatus, OrderStatus, Role, TableStatus } from "@/constants/type";
 import { EntityError } from "@/lib/http";
 import { TokenPayload } from "@/types/jwt.types";
 import { type ClassValue, clsx } from "clsx";
 import jwt from "jsonwebtoken";
 import { jwtDecode } from "jwt-decode";
+import { BookX, CookingPot, HandCoins, Loader, Truck } from "lucide-react";
 import { UseFormSetError } from "react-hook-form";
+import slugify from "slugify";
+import { io } from "socket.io-client";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -172,3 +175,81 @@ export const setAccessTokenToLocalStorage = (value: string) =>
 
 export const setRefreshTokenToLocalStorage = (value: string) =>
   isBrowser && localStorage.setItem("refreshToken", value);
+
+export const getVietnameseOrderStatus = (
+  status: (typeof OrderStatus)[keyof typeof OrderStatus]
+) => {
+  switch (status) {
+    case OrderStatus.Delivered:
+      return "Đã phục vụ";
+    case OrderStatus.Paid:
+      return "Đã thanh toán";
+    case OrderStatus.Pending:
+      return "Chờ xử lý";
+    case OrderStatus.Processing:
+      return "Đang nấu";
+    default:
+      return "Từ chối";
+  }
+};
+
+export function removeAccents(str: string) {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+export const simpleMatchText = (fullText: string, matchText: string) => {
+  return removeAccents(fullText.toLowerCase()).includes(
+    removeAccents(matchText.trim().toLowerCase())
+  );
+};
+
+// export const formatDateTimeToLocaleString = (date: string | Date) => {
+//   return format(
+//     date instanceof Date ? date : new Date(date),
+//     "HH:mm:ss dd/MM/yyyy"
+//   );
+// };
+
+// export const formatDateTimeToTimeString = (date: string | Date) => {
+//   return format(date instanceof Date ? date : new Date(date), "HH:mm:ss");
+// };
+
+export const generateSocketInstace = (accessToken: string) => {
+  return io(envConfig.NEXT_PUBLIC_API_ENDPOINT, {
+    auth: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
+
+export const OrderStatusIcon = {
+  [OrderStatus.Pending]: Loader,
+  [OrderStatus.Processing]: CookingPot,
+  [OrderStatus.Rejected]: BookX,
+  [OrderStatus.Delivered]: Truck,
+  [OrderStatus.Paid]: HandCoins,
+};
+
+export const wrapServerApi = async <T>(fn: () => Promise<T>) => {
+  let result = null;
+  try {
+    result = await fn();
+  } catch (error: any) {
+    if (error.digest?.includes("NEXT_REDIRECT")) {
+      throw error;
+    }
+  }
+  return result;
+};
+
+export const generateSlugUrl = ({ name, id }: { name: string; id: number }) => {
+  return `${slugify(name)}-i.${id}`;
+};
+
+export const getIdFromSlugUrl = (slug: string) => {
+  return Number(slug.split("-i.")[1]);
+};

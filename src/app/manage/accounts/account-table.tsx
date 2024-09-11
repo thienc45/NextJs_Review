@@ -16,21 +16,9 @@ import {
 
 import { Button } from '@/components/ui/button'
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AccountListResType, AccountType } from '@/schemaValidations/account.schema'
 import AddEmployee from '@/app/manage/accounts/add-employee'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import EditEmployee from '@/app/manage/accounts/edit-employee'
-import { createContext, useContext, useEffect, useState } from 'react'
+import AutoPagination from '@/components/auto-pagination'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,8 +29,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { toast } from '@/components/ui/use-toast'
+import { handleErrorApi } from '@/lib/utils'
+import { useDeleteAccountMutation, useGetAccountList } from '@/queries/useAccount'
+import { AccountListResType, AccountType } from '@/schemaValidations/account.schema'
 import { useSearchParams } from 'next/navigation'
-import AutoPagination from '@/components/auto-pagination'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 type AccountItem = AccountListResType['data'][0]
 
@@ -52,13 +55,25 @@ const AccountTableContext = createContext<{
   employeeDelete: AccountItem | null
   setEmployeeDelete: (value: AccountItem | null) => void
 }>({
-  setEmployeeIdEdit: (value: number | undefined) => {},
+  setEmployeeIdEdit: (value: number | undefined) => { },
   employeeIdEdit: undefined,
   employeeDelete: null,
-  setEmployeeDelete: (value: AccountItem | null) => {}
+  setEmployeeDelete: (value: AccountItem | null) => { }
 })
 
 export const columns: ColumnDef<AccountType>[] = [
+
+  // {
+  //   id: 'stt',          // Định danh cho cột, có thể dùng để tham chiếu
+  //   header: 'STT',      // Tiêu đề của cột, sẽ hiển thị ở phần đầu bảng
+  //   cell: ({ row }) => {  // Hàm để render nội dung của ô trong cột này
+  //     return (
+  //       <>
+  //         {row.index}
+  //       </>
+  //     );
+  //   },
+  // },
   {
     accessorKey: 'id',
     header: 'ID'
@@ -131,6 +146,22 @@ function AlertDialogDeleteAccount({
   employeeDelete: AccountItem | null
   setEmployeeDelete: (value: AccountItem | null) => void
 }) {
+  const { mutateAsync } = useDeleteAccountMutation()
+  const deleteAccount = async () => {
+    if (employeeDelete) {
+      try {
+        const result = await mutateAsync(employeeDelete.id)
+        setEmployeeDelete(null)
+        toast({
+          title: result.payload.message
+        })
+      } catch (error) {
+        handleErrorApi({
+          error
+        })
+      }
+    }
+  }
   return (
     <AlertDialog
       open={Boolean(employeeDelete)}
@@ -150,7 +181,7 @@ function AlertDialogDeleteAccount({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={deleteAccount}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -160,12 +191,15 @@ function AlertDialogDeleteAccount({
 const PAGE_SIZE = 10
 export default function AccountTable() {
   const searchParam = useSearchParams()
+  const accountListQuery = useGetAccountList()
+  const data = accountListQuery.data?.payload.data ?? []
+
   const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
   const pageIndex = page - 1
   // const params = Object.fromEntries(searchParam.entries())
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>()
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null)
-  const data: any[] = []
+  // const data: any[] = []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -207,7 +241,7 @@ export default function AccountTable() {
   return (
     <AccountTableContext.Provider value={{ employeeIdEdit, setEmployeeIdEdit, employeeDelete, setEmployeeDelete }}>
       <div className='w-full'>
-        <EditEmployee id={employeeIdEdit} setId={setEmployeeIdEdit} onSubmitSuccess={() => {}} />
+        <EditEmployee id={employeeIdEdit} setId={setEmployeeIdEdit} onSubmitSuccess={() => { }} />
         <AlertDialogDeleteAccount employeeDelete={employeeDelete} setEmployeeDelete={setEmployeeDelete} />
         <div className='flex items-center py-4'>
           <Input

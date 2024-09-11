@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import {
   ColumnDef,
@@ -13,19 +14,11 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { Button } from '@/components/ui/button'
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { createContext, useContext, useEffect, useState } from 'react'
+import AddTable from '@/app/manage/tables/add-table'
+import EditTable from '@/app/manage/tables/edit-table'
+import AutoPagination from '@/components/auto-pagination'
+import { QRCodeTable } from '@/components/QRCodeTable'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,12 +29,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
-import { getVietnameseTableStatus } from '@/lib/utils'
-import { useSearchParams } from 'next/navigation'
-import AutoPagination from '@/components/auto-pagination'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useTableListQuery } from '@/queries/useTable'
 import { TableListResType } from '@/schemaValidations/table.schema'
-import EditTable from '@/app/manage/tables/edit-table'
-import AddTable from '@/app/manage/tables/add-table'
+import { useSearchParams } from 'next/navigation'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 type TableItem = TableListResType['data'][0]
 
@@ -51,10 +52,10 @@ const TableTableContext = createContext<{
   tableDelete: TableItem | null
   setTableDelete: (value: TableItem | null) => void
 }>({
-  setTableIdEdit: (value: number | undefined) => {},
+  setTableIdEdit: (value: number | undefined) => { },
   tableIdEdit: undefined,
   tableDelete: null,
-  setTableDelete: (value: TableItem | null) => {}
+  setTableDelete: (value: TableItem | null) => { }
 })
 
 export const columns: ColumnDef<TableItem>[] = [
@@ -68,11 +69,28 @@ export const columns: ColumnDef<TableItem>[] = [
     header: 'Sức chứa',
     cell: ({ row }) => <div className='capitalize'>{row.getValue('capacity')}</div>
   },
+  // {
+  //   accessorKey: 'status',
+  //   header: 'Trạng thái',
+  //   cell: ({ row }) => <div>{getVietnameseTableStatus(row.getValue('status'))}</div>
+  // },
   {
-    accessorKey: 'status',
-    header: 'Trạng thái',
-    cell: ({ row }) => <div>{getVietnameseTableStatus(row.getValue('status'))}</div>
+    accessorKey: 'token',
+    header: 'QR Code',
+    cell: ({ row }) => (
+      <div>
+        <QRCodeTable
+          token={row.getValue('token')}
+          tableNumber={row.getValue('number')}
+        />
+        {/* {getTableLink({
+          token: row.getValue('token'),
+          tableNumber: row.getValue('number')
+        })} */}
+      </div>
+    )
   },
+
   {
     accessorKey: 'token',
     header: 'QR Code',
@@ -151,7 +169,8 @@ export default function TableTable() {
   // const params = Object.fromEntries(searchParam.entries())
   const [tableIdEdit, setTableIdEdit] = useState<number | undefined>()
   const [tableDelete, setTableDelete] = useState<TableItem | null>(null)
-  const data: any[] = []
+  const tableListQuery = useTableListQuery()
+  const data = tableListQuery.data?.payload.data ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -189,6 +208,8 @@ export default function TableTable() {
       pageSize: PAGE_SIZE
     })
   }, [table, pageIndex])
+
+
 
   return (
     <TableTableContext.Provider value={{ tableIdEdit, setTableIdEdit, tableDelete, setTableDelete }}>

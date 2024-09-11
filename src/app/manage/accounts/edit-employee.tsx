@@ -1,4 +1,5 @@
 'use client'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,16 +9,19 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { toast } from '@/components/ui/use-toast'
+import { handleErrorApi } from '@/lib/utils'
+import { useGetAccount, useUpdateAccountMutation } from '@/queries/useAccount'
+import { useUploadImageMutation } from '@/queries/useMedia'
 import { UpdateEmployeeAccountBody, UpdateEmployeeAccountBodyType } from '@/schemaValidations/account.schema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Upload } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Switch } from '@/components/ui/switch'
 
 export default function EditEmployee({
   id,
@@ -28,6 +32,8 @@ export default function EditEmployee({
   setId: (value: number | undefined) => void
   onSubmitSuccess?: () => void
 }) {
+
+  console.log(id)
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
   const form = useForm<UpdateEmployeeAccountBodyType>({
@@ -41,6 +47,9 @@ export default function EditEmployee({
       changePassword: false
     }
   })
+
+  const updateAccountMutation = useUpdateAccountMutation()
+  const uploadMediaMutation = useUploadImageMutation()
   const avatar = form.watch('avatar')
   const name = form.watch('name')
   const changePassword = form.watch('changePassword')
@@ -51,6 +60,64 @@ export default function EditEmployee({
     return avatar
   }, [file, avatar])
 
+
+  const { data } = useGetAccount({
+    id: id as number,
+    enabled: Boolean(id)
+  })
+
+  useEffect(() => {
+    if (data) {
+      const { name, avatar, email, role } = data.payload.data
+      form.reset({
+        name,
+        avatar: avatar ?? undefined,
+        email,
+        changePassword: form.getValues('changePassword'),
+        password: form.getValues('password'),
+        confirmPassword: form.getValues('confirmPassword'),
+        // role
+      })
+    }
+  }, [data, form])
+
+  const onSubmit = async (values: UpdateEmployeeAccountBodyType) => {
+    if (updateAccountMutation.isPending) return
+    try {
+      let body: UpdateEmployeeAccountBodyType & { id: number } = {
+        id: id as number,
+        ...values
+      }
+      if (file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        const uploadImageResult = await uploadMediaMutation.mutateAsync(
+          formData
+        )
+        const imageUrl = uploadImageResult.payload.data
+        body = {
+          ...body,
+          avatar: imageUrl
+        }
+      }
+      const result = await updateAccountMutation.mutateAsync(body)
+      toast({
+        description: result.payload.message
+      })
+      reset()
+      onSubmitSuccess && onSubmitSuccess()
+    } catch (error) {
+      handleErrorApi({
+        error,
+        setError: form.setError
+      })
+    }
+  }
+
+  const reset = () => {
+    setId(undefined)
+    setFile(null)
+  }
   return (
     <Dialog
       open={Boolean(id)}
@@ -66,7 +133,7 @@ export default function EditEmployee({
           <DialogDescription>Các trường tên, email, mật khẩu là bắt buộc</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form noValidate className='grid auto-rows-max items-start gap-4 md:gap-8' id='edit-employee-form'>
+          <form noValidate className='grid auto-rows-max items-start gap-4 md:gap-8' id='edit-employee-form' onSubmit={form.handleSubmit(onSubmit, console.log)}>
             <div className='grid gap-4 py-4'>
               <FormField
                 control={form.control}

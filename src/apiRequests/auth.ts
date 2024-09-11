@@ -1,11 +1,17 @@
 import http from "@/lib/http";
 import {
+  AccountResType,
+  ChangePasswordBodyType,
+} from "@/schemaValidations/account.schema";
+import {
   LoginBodyType,
   LoginResType,
   LogoutBodyType,
   RefreshTokenBodyType,
   RefreshTokenResType,
 } from "@/schemaValidations/auth.schema";
+
+const prefix = "/accounts";
 
 const authApiRequest = {
   refreshTokenRequest: null as Promise<{
@@ -53,6 +59,8 @@ const authApiRequest = {
   },
   setTokenToCookie: (body: { accessToken: string; refreshToken: string }) =>
     http.post("/api/auth/token", body, { baseUrl: "" }),
+  changePassword: (body: ChangePasswordBodyType) =>
+    http.put<AccountResType>(`${prefix}/change-password`, body),
 };
 
 export default authApiRequest;

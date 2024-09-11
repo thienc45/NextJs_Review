@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import {
   ColumnDef,
@@ -13,20 +14,10 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { Button } from '@/components/ui/button'
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { createContext, useContext, useEffect, useState } from 'react'
+import AddDish from '@/app/manage/dishes/add-dish'
+import EditDish from '@/app/manage/dishes/edit-dish'
+import AutoPagination from '@/components/auto-pagination'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,12 +28,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
-import { formatCurrency, getVietnameseDishStatus } from '@/lib/utils'
-import { useSearchParams } from 'next/navigation'
-import AutoPagination from '@/components/auto-pagination'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { toast } from '@/components/ui/use-toast'
+import { formatCurrency, getVietnameseDishStatus, handleErrorApi } from '@/lib/utils'
+import { useDeleteDishMutation, useDishListQuery } from '@/queries/useDish'
 import { DishListResType } from '@/schemaValidations/dish.schema'
-import EditDish from '@/app/manage/dishes/edit-dish'
-import AddDish from '@/app/manage/dishes/add-dish'
+import { useSearchParams } from 'next/navigation'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 type DishItem = DishListResType['data'][0]
 
@@ -52,10 +54,10 @@ const DishTableContext = createContext<{
   dishDelete: DishItem | null
   setDishDelete: (value: DishItem | null) => void
 }>({
-  setDishIdEdit: (value: number | undefined) => {},
+  setDishIdEdit: (value: number | undefined) => { },
   dishIdEdit: undefined,
   dishDelete: null,
-  setDishDelete: (value: DishItem | null) => {}
+  setDishDelete: (value: DishItem | null) => { }
 })
 
 export const columns: ColumnDef<DishItem>[] = [
@@ -136,6 +138,24 @@ function AlertDialogDeleteDish({
   dishDelete: DishItem | null
   setDishDelete: (value: DishItem | null) => void
 }) {
+
+  const { mutateAsync } = useDeleteDishMutation()
+  const deleteDish = async () => {
+    if (dishDelete) {
+      try {
+        const result = await mutateAsync(dishDelete.id)
+        setDishDelete(null)
+        toast({
+          title: result.payload.message
+        })
+      } catch (error) {
+        handleErrorApi({
+          error
+        })
+      }
+    }
+  }
+
   return (
     <AlertDialog
       open={Boolean(dishDelete)}
@@ -155,7 +175,7 @@ function AlertDialogDeleteDish({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={deleteDish}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -169,7 +189,8 @@ export default function DishTable() {
   const pageIndex = page - 1
   const [dishIdEdit, setDishIdEdit] = useState<number | undefined>()
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null)
-  const data: any[] = []
+  const dishListQuery = useDishListQuery()
+  const data = dishListQuery.data?.payload.data ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})

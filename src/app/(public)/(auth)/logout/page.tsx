@@ -58,6 +58,6 @@ export default function LogoutPage() {
         // setRole,
         // disconnectSocket
     ])
-    return null
+    // return null
     return <div>logout page </div>;
 }

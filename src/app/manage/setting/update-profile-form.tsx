@@ -18,7 +18,7 @@ import { useForm } from 'react-hook-form'
 export default function UpdateProfileForm() {
   const [file, setFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null)
-  const { data,refetch } = useAccountQuery()
+  const { data, refetch } = useAccountQuery()
   const updateMeMutation = useUpdateMeMutation()
   const uploadImageMutation = useUploadImageMutation()
   // const data = useAccountQuery((data => {
@@ -33,7 +33,8 @@ export default function UpdateProfileForm() {
     resolver: zodResolver(UpdateMeBody),
     defaultValues: {
       name: '',
-      avatar: ''
+      // avatar: ''
+      avatar: undefined
     }
   })
 
