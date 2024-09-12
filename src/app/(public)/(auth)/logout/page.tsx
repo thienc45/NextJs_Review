@@ -14,7 +14,7 @@ export default function LogoutPage() {
     const refreshTokenFromUrl = searchParams.get('refreshToken')
     const accessTokenFromUrl = searchParams.get('accessToken')
     const ref = useRef<any>(null);
-    const { setIsAuth } = useAppContext()
+    const { setRole } = useAppContext()
     // useEffect(() => {
     //     if (ref.current ||
     //         (refreshTokenFromUrl && refreshTokenFromUrl !== getRefreshTokenFromLocalStorage()) ||
@@ -43,7 +43,7 @@ export default function LogoutPage() {
                 setTimeout(() => {
                     ref.current = null
                 }, 1000)
-                setIsAuth(false)
+                setRole()
                 // setRole()
                 // disconnectSocket()
             })
@@ -55,7 +55,7 @@ export default function LogoutPage() {
         router,
         refreshTokenFromUrl,
         accessTokenFromUrl,
-        // setRole,
+        setRole,
         // disconnectSocket
     ])
     // return null

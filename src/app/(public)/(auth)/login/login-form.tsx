@@ -1,18 +1,18 @@
 'use client'
-import { useAppContext } from '@/components/app-provider'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useToast } from '@/components/ui/use-toast'
-import { handleErrorApi } from '@/lib/utils'
-import { useLoginMutation } from '@/queries/useAuth'
-import { LoginBody, LoginBodyType } from '@/schemaValidations/auth.schema'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useAppContext } from '@/components/app-provider';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { handleErrorApi } from '@/lib/utils';
+import { useLoginMutation } from '@/queries/useAuth';
+import { LoginBody, LoginBodyType } from '@/schemaValidations/auth.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation'; // Sử dụng 'next/navigation' thay vì 'next/router'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 
 export default function LoginForm() {
   const loginMutation = useLoginMutation()
@@ -20,7 +20,8 @@ export default function LoginForm() {
   const router = useRouter() // Sử dụng router từ 'next/navigation'
   const searchService = useSearchParams()
   const clearTokens = searchService.get('clearTokens')
-  const { setIsAuth } = useAppContext()
+  // const setRole = useAppStore((state) => state.setRole)
+  const { setRole } = useAppContext()
 
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
@@ -30,6 +31,12 @@ export default function LoginForm() {
     }
   })
 
+  useEffect(() => {
+    if (clearTokens) {
+      setRole()
+    }
+  }, [clearTokens, setRole])
+
   const onSubmit = async (data: LoginBodyType) => {
     if (loginMutation.isPending) return;
     try {
@@ -37,7 +44,7 @@ export default function LoginForm() {
       toast({
         description: result.payload.message,
       });
-      setIsAuth(true)
+      setRole(result.payload.data.account.role)
       router.push('/manage/dashboard')
       // // Chuyển hướng sau khi đăng nhập thành công
       router.refresh()
@@ -47,11 +54,7 @@ export default function LoginForm() {
     }
   };
 
-  useEffect(() => {
-    if (clearTokens) {
-      setIsAuth(false)
-    }
-  }, [clearTokens, setIsAuth])
+
   return (
     <Card className='mx-auto max-w-sm'>
       <CardHeader>

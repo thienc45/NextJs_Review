@@ -1,19 +1,19 @@
 'use client'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { UpdateOrderBody, UpdateOrderBodyType } from '@/schemaValidations/order.schema'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { getVietnameseOrderStatus } from '@/lib/utils'
-import { OrderStatus, OrderStatusValues } from '@/constants/type'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DishesDialog } from '@/app/manage/orders/dishes-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { OrderStatus, OrderStatusValues } from '@/constants/type'
+import { getVietnameseOrderStatus } from '@/lib/utils'
 import { DishListResType } from '@/schemaValidations/dish.schema'
+import { UpdateOrderBody, UpdateOrderBodyType } from '@/schemaValidations/order.schema'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 const fakeOrderDetail = {
   id: 30,
@@ -74,7 +74,7 @@ export default function EditOrder({
     }
   })
 
-  const onSubmit = async (values: UpdateOrderBodyType) => {}
+  const onSubmit = async (values: UpdateOrderBodyType) => { }
 
   const reset = () => {
     setId(undefined)

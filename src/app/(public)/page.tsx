@@ -1,6 +1,21 @@
+import dishApiRequest from '@/apiRequests/dish'
+import { formatCurrency, generateSlugUrl } from '@/lib/utils'
+// import { Link } from '@/navigation'
+import { DishListResType } from '@/schemaValidations/dish.schema'
 import Image from 'next/image'
+import Link from 'next/link'
 
-export default function Home() {
+export default async function Home() {
+  let dishList: DishListResType['data'] = []
+  try {
+    const result = await dishApiRequest.list()
+    const {
+      payload: { data }
+    } = result
+    dishList = data
+  } catch (error) {
+    return <div>Something went wrong</div>
+  }
   return (
     <div className='w-full space-y-4'>
       <div className='relative'>
@@ -21,7 +36,7 @@ export default function Home() {
       <section className='space-y-10 py-16'>
         <h2 className='text-center text-2xl font-bold'>Đa dạng các món ăn</h2>
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-10'>
-          {Array(4)
+          {/* {Array(4)
             .fill(0)
             .map((_, index) => (
               <div className='flex gap-4 w' key={index}>
@@ -37,7 +52,34 @@ export default function Home() {
                   <p className='font-semibold'>123,123đ</p>
                 </div>
               </div>
-            ))}
+            ))} */}
+          {dishList.map((dish) => (
+            <Link
+              href={`/dishes/${generateSlugUrl({
+                name: dish.name,
+                id: dish.id
+              })}`}
+              className='flex gap-4 w'
+              key={dish.id}
+            >
+              <div className='flex-shrink-0'>
+                <Image
+                  src={dish.image}
+                  width={150}
+                  height={150}
+                  quality={80}
+                  loading='lazy'
+                  alt={dish.name}
+                  className='object-cover w-[150px] h-[150px] rounded-md'
+                />
+              </div>
+              <div className='space-y-1'>
+                <h3 className='text-xl font-semibold'>{dish.name}</h3>
+                <p className=''>{dish.description}</p>
+                <p className='font-semibold'>{formatCurrency(dish.price)}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
     </div>
