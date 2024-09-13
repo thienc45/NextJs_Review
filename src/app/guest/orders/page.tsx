@@ -1,4 +1,5 @@
-import OrdersCart from '@/app/[locale]/guest/orders/orders-cart'
+import OrdersCart from "./orders-cart";
+
 
 export default function OrdersPage() {
   return (

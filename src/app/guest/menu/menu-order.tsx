@@ -1,54 +1,58 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { cn, formatCurrency } from '@/lib/utils'
-import { useDishListQuery } from '@/queries/useDish'
-import Image from 'next/image'
-// import Quantity from '@/app/[locale]/guest/menu/quantity'
 import { DishStatus } from '@/constants/type'
+import { cn, formatCurrency, handleErrorApi } from '@/lib/utils'
+import { useDishListQuery } from '@/queries/useDish'
 import { useGuestOrderMutation } from '@/queries/useGuest'
-import { useMemo } from 'react'
-// import { useRouter } from '@/navigation'
+import { GuestCreateOrdersBodyType } from '@/schemaValidations/guest.schema'
+import Image from 'next/image'
+
+import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
+import Quantity from './quantity'
 
 export default function MenuOrder() {
   const { data } = useDishListQuery()
   const dishes = useMemo(() => data?.payload.data ?? [], [data])
-  // const [orders, setOrders] = useState<GuestCreateOrdersBodyType>([])
+
+  const [orders, setOrders] = useState<GuestCreateOrdersBodyType>([])
   const { mutateAsync } = useGuestOrderMutation()
-  // const router = useRouter()
-  // React 19 hoặc Next.js 15 thì không cần dùng useMemo chỗ này
-  // const totalPrice = useMemo(() => {
-  //   return dishes.reduce((result, dish) => {
-  //     const order = orders.find((order) => order.dishId === dish.id)
-  //     if (!order) return result
-  //     return result + order.quantity * dish.price
-  //   }, 0)
-  // }, [dishes, orders])
+  const router = useRouter()
 
-  // const handleQuantityChange = (dishId: number, quantity: number) => {
-  //   setOrders((prevOrders) => {
-  //     if (quantity === 0) {
-  //       return prevOrders.filter((order) => order.dishId !== dishId)
-  //     }
-  //     const index = prevOrders.findIndex((order) => order.dishId === dishId)
-  //     if (index === -1) {
-  //       return [...prevOrders, { dishId, quantity }]
-  //     }
-  //     const newOrders = [...prevOrders]
-  //     newOrders[index] = { ...newOrders[index], quantity }
-  //     return newOrders
-  //   })
-  // }
+  const totalPrice = useMemo(() => {
+    return dishes.reduce((result, dish) => {
+      const order = orders.find((order) => order.dishId === dish.id)
+      if (!order) return result
+      return result + order.quantity * dish.price
+    }, 0)
+  }, [dishes, orders])
 
-  // const handleOrder = async () => {
-  //   try {
-  //     await mutateAsync(orders)
-  //     router.push(`/guest/orders`)
-  //   } catch (error) {
-  //     handleErrorApi({
-  //       error
-  //     })
-  //   }
-  // }
+  const handleQuantityChange = (dishId: number, quantity: number) => {
+    setOrders((prevOrders) => {
+      if (quantity === 0) {
+        return prevOrders.filter((order) => order.dishId !== dishId)
+      }
+      const index = prevOrders.findIndex((order) => order.dishId === dishId)
+      if (index === -1) {
+        return [...prevOrders, { dishId, quantity }]
+      }
+      const newOrders = [...prevOrders]
+      newOrders[index] = { ...newOrders[index], quantity }
+      return newOrders
+    })
+  }
+
+  const handleOrder = async () => {
+    try {
+      await mutateAsync(orders)
+      router.push(`/guest/orders`)
+    } catch (error) {
+      handleErrorApi({
+        error
+      })
+    }
+  }
+
   return (
     <>
       {dishes
@@ -83,24 +87,23 @@ export default function MenuOrder() {
               </p>
             </div>
             <div className='flex-shrink-0 ml-auto flex justify-center items-center'>
-              {/* <Quantity
+              <Quantity
                 onChange={(value) => handleQuantityChange(dish.id, value)}
                 value={
-                  orders.find((order) => order.dishId === dish.id)?.quantity ??
-                  0
+                  orders.find((order) => order.dishId === dish.id)?.quantity ?? 0
                 }
-              /> */}
+              />
             </div>
           </div>
         ))}
       <div className='sticky bottom-0'>
         <Button
           className='w-full justify-between'
-        // onClick={handleOrder}
-        // disabled={orders.length === 0}
+          onClick={handleOrder}
+          disabled={orders.length === 0}
         >
-          {/* <span>Đặt hàng · {orders.length} món</span>
-          <span>{formatCurrency(totalPrice)}</span> */}
+          <span>Đặt hàng · {orders.length} món</span>
+          <span>{formatCurrency(totalPrice)}</span>
         </Button>
       </div>
     </>
