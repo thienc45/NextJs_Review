@@ -6,6 +6,7 @@ import { DishStatus, OrderStatus, Role, TableStatus } from "@/constants/type";
 import { EntityError } from "@/lib/http";
 import { TokenPayload } from "@/types/jwt.types";
 import { type ClassValue, clsx } from "clsx";
+import { format } from "date-fns";
 import jwt from "jsonwebtoken";
 import { jwtDecode } from "jwt-decode";
 import { BookX, CookingPot, HandCoins, Loader, Truck } from "lucide-react";
@@ -207,16 +208,16 @@ export const simpleMatchText = (fullText: string, matchText: string) => {
   );
 };
 
-// export const formatDateTimeToLocaleString = (date: string | Date) => {
-//   return format(
-//     date instanceof Date ? date : new Date(date),
-//     "HH:mm:ss dd/MM/yyyy"
-//   );
-// };
+export const formatDateTimeToLocaleString = (date: string | Date) => {
+  return format(
+    date instanceof Date ? date : new Date(date),
+    "HH:mm:ss dd/MM/yyyy"
+  );
+};
 
-// export const formatDateTimeToTimeString = (date: string | Date) => {
-//   return format(date instanceof Date ? date : new Date(date), "HH:mm:ss");
-// };
+export const formatDateTimeToTimeString = (date: string | Date) => {
+  return format(date instanceof Date ? date : new Date(date), "HH:mm:ss");
+};
 
 export const generateSocketInstace = (accessToken: string) => {
   return io(envConfig.NEXT_PUBLIC_API_ENDPOINT, {

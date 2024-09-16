@@ -2,104 +2,108 @@
 
 // import { useAppStore } from '@/components/app-provider'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/components/ui/use-toast'
+import { OrderStatus } from '@/constants/type'
+import socket from '@/lib/socket'
 import { formatCurrency, getVietnameseOrderStatus } from '@/lib/utils'
 import { useGuestGetOrderListQuery } from '@/queries/useGuest'
+import { UpdateOrderResType } from '@/schemaValidations/order.schema'
 import Image from 'next/image'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 export default function OrdersCart() {
   const { data, refetch } = useGuestGetOrderListQuery()
   const orders = useMemo(() => data?.payload.data ?? [], [data])
-  // const socket = useAppStore((state) => state.socket)/
-  // const { waitingForPaying, paid } = useMemo(() => {
-  //   return orders.reduce(
-  //     (result, order) => {
-  //       if (
-  //         order.status === OrderStatus.Delivered ||
-  //         order.status === OrderStatus.Processing ||
-  //         order.status === OrderStatus.Pending
-  //       ) {
-  //         return {
-  //           ...result,
-  //           waitingForPaying: {
-  //             price:
-  //               result.waitingForPaying.price +
-  //               order.dishSnapshot.price * order.quantity,
-  //             quantity: result.waitingForPaying.quantity + order.quantity
-  //           }
-  //         }
-  //       }
-  //       if (order.status === OrderStatus.Paid) {
-  //         return {
-  //           ...result,
-  //           paid: {
-  //             price:
-  //               result.paid.price + order.dishSnapshot.price * order.quantity,
-  //             quantity: result.paid.quantity + order.quantity
-  //           }
-  //         }
-  //       }
-  //       return result
-  //     },
-  //     {
-  //       waitingForPaying: {
-  //         price: 0,
-  //         quantity: 0
-  //       },
-  //       paid: {
-  //         price: 0,
-  //         quantity: 0
-  //       }
-  //     }
-  //   )
-  // }, [orders])
+  // const socket = useAppStore((state) => state.socket)
+  const { waitingForPaying, paid } = useMemo(() => {
+    return orders.reduce(
+      (result, order) => {
+        if (
+          order.status === OrderStatus.Delivered ||
+          order.status === OrderStatus.Processing ||
+          order.status === OrderStatus.Pending
+        ) {
+          return {
+            ...result,
+            waitingForPaying: {
+              price:
+                result.waitingForPaying.price +
+                order.dishSnapshot.price * order.quantity,
+              quantity: result.waitingForPaying.quantity + order.quantity
+            }
+          }
+        }
+        if (order.status === OrderStatus.Paid) {
+          return {
+            ...result,
+            paid: {
+              price:
+                result.paid.price + order.dishSnapshot.price * order.quantity,
+              quantity: result.paid.quantity + order.quantity
+            }
+          }
+        }
+        return result
+      },
+      {
+        waitingForPaying: {
+          price: 0,
+          quantity: 0
+        },
+        paid: {
+          price: 0,
+          quantity: 0
+        }
+      }
+    )
+  }, [orders])
 
-  // useEffect(() => {
-  //   if (socket?.connected) {
-  //     onConnect()
-  //   }
+  useEffect(() => {
+    if (socket?.connected) {
+      onConnect()
+    }
 
-  //   function onConnect() {
-  //     console.log(socket?.id)
-  //   }
+    function onConnect() {
+      console.log(socket?.id)
+    }
 
-  //   function onDisconnect() {
-  //     console.log('disconnect')
-  //   }
+    function onDisconnect() {
+      console.log('disconnect')
+    }
 
-  //   function onUpdateOrder(data: UpdateOrderResType['data']) {
-  //     const {
-  //       dishSnapshot: { name },
-  //       quantity
-  //     } = data
-  //     toast({
-  //       description: `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái "${getVietnameseOrderStatus(
-  //         data.status
-  //       )}"`
-  //     })
-  //     refetch()
-  //   }
+    function onUpdateOrder(data: UpdateOrderResType['data']) {
+      const {
+        dishSnapshot: { name },
+        quantity
+      } = data
+      toast({
+        description: `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái "${getVietnameseOrderStatus(
+          data.status
+        )}"`
+      })
+      refetch()
+    }
 
-  //   function onPayment(data: PayGuestOrdersResType['data']) {
-  //     const { guest } = data[0]
-  //     toast({
-  //       description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`
-  //     })
-  //     refetch()
-  //   }
+    // function onPayment(data: PayGuestOrdersResType['data']) {
+    //   const { guest } = data[0]
+    //   toast({
+    //     description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`
+    //   })
+    //   refetch()
+    // }
 
-  //   socket?.on('update-order', onUpdateOrder)
-  //   socket?.on('payment', onPayment)
-  //   socket?.on('connect', onConnect)
-  //   socket?.on('disconnect', onDisconnect)
+    socket?.on('update-order', onUpdateOrder)
+    // socket?.on('payment', onPayment)
+    socket?.on('connect', onConnect)
+    socket?.on('disconnect', onDisconnect)
 
-  //   return () => {
-  //     socket?.off('connect', onConnect)
-  //     socket?.off('disconnect', onDisconnect)
-  //     socket?.off('update-order', onUpdateOrder)
-  //     socket?.off('payment', onPayment)
-  //   }
-  // }, [refetch, socket])
+    return () => {
+      socket?.off('connect', onConnect)
+      socket?.off('disconnect', onDisconnect)
+      socket?.off('update-order', onUpdateOrder)
+      // socket?.off('payment', onPayment)
+    }
+  }, [refetch, socket])
   return (
     <>
       {orders.map((order, index) => (
@@ -129,18 +133,18 @@ export default function OrdersCart() {
           </div>
         </div>
       ))}
-      {/* {paid.quantity !== 0 && (
+      {paid.quantity !== 0 && (
         <div className='sticky bottom-0 '>
           <div className='w-full flex space-x-4 text-xl font-semibold'>
             <span>Đơn đã thanh toán · {paid.quantity} món</span>
             <span>{formatCurrency(paid.price)}</span>
           </div>
         </div>
-      )} */}
+      )}
       <div className='sticky bottom-0 '>
         <div className='w-full flex space-x-4 text-xl font-semibold'>
-          {/* <span>Đơn chưa thanh toán · {waitingForPaying.quantity} món</span>
-          <span>{formatCurrency(waitingForPaying.price)}</span> */}
+          <span>Đơn chưa thanh toán · {waitingForPaying.quantity} món</span>
+          <span>{formatCurrency(waitingForPaying.price)}</span>
         </div>
       </div>
     </>

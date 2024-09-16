@@ -9,7 +9,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      refetchOnMount: false
+      // refetchOnMount: false
     }
   }
 })
@@ -80,7 +80,6 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   return (
     <QueryClientProvider client={queryClient}>
       <Provider>{children}
-
         <RefreshToken />
       </Provider>
     </QueryClientProvider>

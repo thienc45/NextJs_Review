@@ -1,9 +1,11 @@
+import AutoPagination from '@/components/auto-pagination'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import AutoPagination from '@/components/auto-pagination'
+import { formatCurrency, getVietnameseDishStatus, simpleMatchText } from '@/lib/utils'
+import { useDishListQuery } from '@/queries/useDish'
 import { DishListResType } from '@/schemaValidations/dish.schema'
-import { useEffect, useState } from 'react'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -16,9 +18,8 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { formatCurrency, getVietnameseDishStatus, simpleMatchText } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
 import Image from 'next/image'
+import { useEffect, useState } from 'react'
 
 type DishItem = DishListResType['data'][0]
 const fakeData = [
@@ -89,7 +90,9 @@ export const columns: ColumnDef<DishItem>[] = [
 const PAGE_SIZE = 10
 export function DishesDialog({ onChoose }: { onChoose: (dish: DishItem) => void }) {
   const [open, setOpen] = useState(false)
-  const data = fakeData
+  // const data = fakeData
+  const dishListQuery = useDishListQuery()
+  const data = dishListQuery.data?.payload.data ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -138,7 +141,7 @@ export function DishesDialog({ onChoose }: { onChoose: (dish: DishItem) => void 
       <DialogTrigger asChild>
         <Button variant='outline'>Thay đổi</Button>
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[600px]'>
+      <DialogContent className='sm:max-w-[600px] max-h-full overflow-auto'>
         <DialogHeader>
           <DialogTitle>Chọn món ăn</DialogTitle>
         </DialogHeader>

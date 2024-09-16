@@ -7,12 +7,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from '@/components/ui/use-toast'
 import { OrderStatus, OrderStatusValues } from '@/constants/type'
-import { getVietnameseOrderStatus } from '@/lib/utils'
+import { getVietnameseOrderStatus, handleErrorApi } from '@/lib/utils'
+import { useGetOrderDetailQuery, useUpdateOrderMutation } from '@/queries/useOrder'
 import { DishListResType } from '@/schemaValidations/dish.schema'
 import { UpdateOrderBody, UpdateOrderBodyType } from '@/schemaValidations/order.schema'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 const fakeOrderDetail = {
@@ -65,6 +67,12 @@ export default function EditOrder({
 }) {
   const [selectedDish, setSelectedDish] = useState<DishListResType['data'][0]>(fakeOrderDetail.dishSnapshot as any)
   const orderDetail = fakeOrderDetail
+  const updateOrderMutation = useUpdateOrderMutation()
+  const { data } = useGetOrderDetailQuery({
+    id: id as number,
+    enabled: Boolean(id)
+  })
+
   const form = useForm<UpdateOrderBodyType>({
     resolver: zodResolver(UpdateOrderBody),
     defaultValues: {
@@ -74,7 +82,48 @@ export default function EditOrder({
     }
   })
 
-  const onSubmit = async (values: UpdateOrderBodyType) => { }
+  // const onSubmit = async (values: UpdateOrderBodyType) => { }
+
+  // const reset = () => {
+  //   setId(undefined)
+  // }
+
+  useEffect(() => {
+    if (data) {
+      const {
+        status,
+        dishSnapshot: { dishId },
+        quantity
+      } = data.payload.data
+      form.reset({
+        status,
+        dishId: dishId ?? 0,
+        quantity
+      })
+      setSelectedDish(data.payload.data.dishSnapshot)
+    }
+  }, [data, form])
+
+  const onSubmit = async (values: UpdateOrderBodyType) => {
+    if (updateOrderMutation.isPending) return
+    try {
+      let body: UpdateOrderBodyType & { orderId: number } = {
+        orderId: id as number,
+        ...values
+      }
+      const result = await updateOrderMutation.mutateAsync(body)
+      toast({
+        description: result.payload.message
+      })
+      reset()
+      onSubmitSuccess && onSubmitSuccess()
+    } catch (error) {
+      handleErrorApi({
+        error,
+        setError: form.setError
+      })
+    }
+  }
 
   const reset = () => {
     setId(undefined)
@@ -162,7 +211,7 @@ export default function EditOrder({
                   <FormItem>
                     <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <FormLabel>Trạng thái</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value} >
                         <FormControl className='col-span-3'>
                           <SelectTrigger className='w-[200px]'>
                             <SelectValue placeholder='Trạng thái' />

@@ -1,8 +1,10 @@
+import AutoPagination from '@/components/auto-pagination'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import AutoPagination from '@/components/auto-pagination'
-import { useEffect, useState } from 'react'
+import { formatDateTimeToLocaleString, simpleMatchText } from '@/lib/utils'
+import { GetListGuestsResType } from '@/schemaValidations/account.schema'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -15,10 +17,8 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { formatDateTimeToLocaleString, simpleMatchText } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
-import { GetListGuestsResType } from '@/schemaValidations/account.schema'
 import { endOfDay, format, startOfDay } from 'date-fns'
+import { useEffect, useState } from 'react'
 
 type GuestItem = GetListGuestsResType['data'][0]
 
@@ -216,8 +216,16 @@ export default function GuestsDialog({ onChoose }: { onChoose: (guest: GuestItem
                 <AutoPagination
                   page={table.getState().pagination.pageIndex + 1}
                   pageSize={table.getPageCount()}
-                  pathname='/manage/Guests'
+                  // pathname='/manage/Guests'
+                  onClick={(pageNumber) =>
+                    table.setPagination({
+                      pageIndex: pageNumber - 1,
+                      pageSize: PAGE_SIZE
+                    })
+                  }
+                  isLink={false}
                 />
+
               </div>
             </div>
           </div>
