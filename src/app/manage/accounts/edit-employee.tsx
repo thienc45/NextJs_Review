@@ -9,15 +9,32 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/components/ui/use-toast'
+import { Role, RoleValues } from '@/constants/type'
 import { handleErrorApi } from '@/lib/utils'
 import { useGetAccount, useUpdateAccountMutation } from '@/queries/useAccount'
 import { useUploadImageMutation } from '@/queries/useMedia'
-import { UpdateEmployeeAccountBody, UpdateEmployeeAccountBodyType } from '@/schemaValidations/account.schema'
+import {
+  UpdateEmployeeAccountBody,
+  UpdateEmployeeAccountBodyType
+} from '@/schemaValidations/account.schema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Upload } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -32,10 +49,15 @@ export default function EditEmployee({
   setId: (value: number | undefined) => void
   onSubmitSuccess?: () => void
 }) {
-
-  console.log(id)
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
+  const { data } = useGetAccount({
+    id: id as number,
+    enabled: Boolean(id)
+  })
+  const updateAccountMutation = useUpdateAccountMutation()
+  const uploadMediaMutation = useUploadImageMutation()
+
   const form = useForm<UpdateEmployeeAccountBodyType>({
     resolver: zodResolver(UpdateEmployeeAccountBody),
     defaultValues: {
@@ -44,12 +66,10 @@ export default function EditEmployee({
       avatar: undefined,
       password: undefined,
       confirmPassword: undefined,
-      changePassword: false
+      changePassword: false,
+      role: Role.Employee
     }
   })
-
-  const updateAccountMutation = useUpdateAccountMutation()
-  const uploadMediaMutation = useUploadImageMutation()
   const avatar = form.watch('avatar')
   const name = form.watch('name')
   const changePassword = form.watch('changePassword')
@@ -59,12 +79,6 @@ export default function EditEmployee({
     }
     return avatar
   }, [file, avatar])
-
-
-  const { data } = useGetAccount({
-    id: id as number,
-    enabled: Boolean(id)
-  })
 
   useEffect(() => {
     if (data) {
@@ -76,7 +90,7 @@ export default function EditEmployee({
         changePassword: form.getValues('changePassword'),
         password: form.getValues('password'),
         confirmPassword: form.getValues('confirmPassword'),
-        // role
+        role
       })
     }
   }, [data, form])
@@ -118,22 +132,30 @@ export default function EditEmployee({
     setId(undefined)
     setFile(null)
   }
+
   return (
     <Dialog
       open={Boolean(id)}
       onOpenChange={(value) => {
         if (!value) {
-          setId(undefined)
+          reset()
         }
       }}
     >
       <DialogContent className='sm:max-w-[600px] max-h-screen overflow-auto'>
         <DialogHeader>
           <DialogTitle>Cập nhật tài khoản</DialogTitle>
-          <DialogDescription>Các trường tên, email, mật khẩu là bắt buộc</DialogDescription>
+          <DialogDescription>
+            Các trường tên, email, mật khẩu là bắt buộc
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form noValidate className='grid auto-rows-max items-start gap-4 md:gap-8' id='edit-employee-form' onSubmit={form.handleSubmit(onSubmit, console.log)}>
+          <form
+            noValidate
+            className='grid auto-rows-max items-start gap-4 md:gap-8'
+            id='edit-employee-form'
+            onSubmit={form.handleSubmit(onSubmit, console.log)}
+          >
             <div className='grid gap-4 py-4'>
               <FormField
                 control={form.control}
@@ -143,7 +165,9 @@ export default function EditEmployee({
                     <div className='flex gap-2 items-start justify-start'>
                       <Avatar className='aspect-square w-[100px] h-[100px] rounded-md object-cover'>
                         <AvatarImage src={previewAvatarFromFile} />
-                        <AvatarFallback className='rounded-none'>{name || 'Avatar'}</AvatarFallback>
+                        <AvatarFallback className='rounded-none'>
+                          {name || 'Avatar'}
+                        </AvatarFallback>
                       </Avatar>
                       <input
                         type='file'
@@ -203,13 +227,50 @@ export default function EditEmployee({
               />
               <FormField
                 control={form.control}
+                name='role'
+                render={({ field }) => (
+                  <FormItem>
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='role'>Vai trò</Label>
+                      <div className='col-span-3 w-full space-y-2'>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='Chọn vai trò' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {RoleValues.map((role) => {
+                              if (role === Role.Guest) return null
+                              return (
+                                <SelectItem key={role} value={role}>
+                                  {role}
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name='changePassword'
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <Label htmlFor='email'>Đổi mật khẩu</Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                         <FormMessage />
                       </div>
                     </div>
@@ -225,7 +286,12 @@ export default function EditEmployee({
                       <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                         <Label htmlFor='password'>Mật khẩu mới</Label>
                         <div className='col-span-3 w-full space-y-2'>
-                          <Input id='password' className='w-full' type='password' {...field} />
+                          <Input
+                            id='password'
+                            className='w-full'
+                            type='password'
+                            {...field}
+                          />
                           <FormMessage />
                         </div>
                       </div>
@@ -240,9 +306,16 @@ export default function EditEmployee({
                   render={({ field }) => (
                     <FormItem>
                       <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
-                        <Label htmlFor='confirmPassword'>Xác nhận mật khẩu mới</Label>
+                        <Label htmlFor='confirmPassword'>
+                          Xác nhận mật khẩu mới
+                        </Label>
                         <div className='col-span-3 w-full space-y-2'>
-                          <Input id='confirmPassword' className='w-full' type='password' {...field} />
+                          <Input
+                            id='confirmPassword'
+                            className='w-full'
+                            type='password'
+                            {...field}
+                          />
                           <FormMessage />
                         </div>
                       </div>
