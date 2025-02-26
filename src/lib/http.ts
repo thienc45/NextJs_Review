@@ -57,6 +57,7 @@ export class EntityError extends HttpError {
 
 let clientLogoutRequest: null | Promise<any> = null;
 const isClient = () => typeof window !== "undefined";
+
 const request = async <Response>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   url: string,
@@ -89,6 +90,7 @@ const request = async <Response>(
     options?.baseUrl === undefined
       ? envConfig.NEXT_PUBLIC_API_ENDPOINT
       : options.baseUrl;
+
   const fullUrl = `${baseUrl}/${normalizePath(url)}`;
   const res = await fetch(fullUrl, {
     ...options,
@@ -106,7 +108,6 @@ const request = async <Response>(
   };
   // Interceptor là nời chúng ta xử lý request và response trước khi trả về cho phía component
   if (!res.ok) {
-    console.log("1");
     if (res.status === ENTITY_ERROR_STATUS) {
       throw new EntityError(
         data as {
@@ -115,7 +116,6 @@ const request = async <Response>(
         }
       );
     } else if (res.status === AUTHENTICATION_ERROR_STATUS) {
-      console.log("2");
       if (isClient()) {
         if (!clientLogoutRequest) {
           clientLogoutRequest = fetch("/api/auth/logout", {
@@ -140,7 +140,6 @@ const request = async <Response>(
           }
         }
       } else {
-        console.log("4");
         // Đây là trường hợp chúng ta còn access token (còn hạn)
         // và chúng ta gợi api ở next js server
         const accessToken = (options?.headers as any)?.Authorization.split(
@@ -149,7 +148,6 @@ const request = async <Response>(
         redirect(`/logout?accessToken=${accessToken}`);
       }
     } else {
-      console.log("3");
       throw new HttpError(data);
     }
   }

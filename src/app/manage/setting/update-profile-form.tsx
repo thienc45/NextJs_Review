@@ -21,6 +21,9 @@ export default function UpdateProfileForm() {
   const { data, refetch } = useAccountQuery()
   const updateMeMutation = useUpdateMeMutation()
   const uploadImageMutation = useUploadImageMutation()
+
+
+
   // const data = useAccountQuery((data => {
   //   const { name, avatar } = data.data
   //   form.reset({
